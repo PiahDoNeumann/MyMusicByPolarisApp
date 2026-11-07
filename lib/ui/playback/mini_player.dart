@@ -10,6 +10,7 @@ import 'package:polaris/core/media_item.dart';
 import 'package:polaris/ui/pages_model.dart';
 import 'package:polaris/ui/playback/playback_controls.dart';
 import 'package:polaris/ui/playback/progress_state.dart';
+import 'package:polaris/ui/playback/seekbar.dart';
 import 'package:polaris/ui/playback/streaming_indicator.dart';
 import 'package:polaris/ui/utils/format.dart';
 import 'package:polaris/ui/utils/thumbnail.dart';
@@ -20,7 +21,10 @@ final getIt = GetIt.instance;
 class MiniPlayer extends StatefulWidget {
   final bool collapse;
 
-  const MiniPlayer({required this.collapse, Key? key}) : super(key: key);
+  /// Adds a seek bar, timestamps and volume, for wide windows.
+  final bool wide;
+
+  const MiniPlayer({required this.collapse, this.wide = false, Key? key}) : super(key: key);
 
   @override
   State<MiniPlayer> createState() => _MiniPlayerState();
@@ -88,13 +92,20 @@ class _MiniPlayerState extends State<MiniPlayer> with TickerProviderStateMixin {
       ),
       axisAlignment: -1.0,
       child: SizedBox(
-        height: 64,
+        height: widget.wide ? 104 : 64,
         child: Material(
           elevation: 8,
-          child: InkWell(
-            onTap: _handleTap,
-            child: playerContent(context),
-          ),
+          child: widget.wide
+              ? Column(
+                  children: [
+                    Expanded(child: InkWell(onTap: _handleTap, child: playerContent(context))),
+                    SizedBox(height: 40, child: _OverlayHost(child: _seekAndVolume(context))),
+                  ],
+                )
+              : InkWell(
+                  onTap: _handleTap,
+                  child: playerContent(context),
+                ),
         ),
       ),
     );
@@ -217,3 +228,70 @@ Widget _progressBar() => LayoutBuilder(
         );
       },
     );
+
+Widget _seekAndVolume(BuildContext context) {
+  final player = getIt<AudioPlayer>();
+  final timeStyle = Theme.of(context).textTheme.bodySmall;
+  return SizedBox(
+    height: 40,
+    child: Row(
+      children: [
+        Expanded(
+          child: StreamBuilder<ProgressState>(
+            stream: ProgressState.createStream(player),
+            builder: (context, snapshot) {
+              final Duration position = snapshot.data?.position ?? Duration.zero;
+              final Duration duration = snapshot.data?.duration ?? Duration.zero;
+              return Row(
+                children: [
+                  Padding(
+                    padding: const EdgeInsets.only(left: 16),
+                    child: Text(formatDuration(position), style: timeStyle),
+                  ),
+                  Expanded(child: SeekBar(duration: duration, position: position, onChangeEnd: player.seek)),
+                  Text(formatDuration(duration), style: timeStyle),
+                ],
+              );
+            },
+          ),
+        ),
+        const Padding(
+          padding: EdgeInsets.only(left: 24),
+          child: Icon(Icons.volume_up, size: 20),
+        ),
+        SizedBox(
+          width: 160,
+          child: StreamBuilder<double>(
+            stream: player.volumeStream,
+            builder: (context, snapshot) => Slider(value: snapshot.data ?? 1.0, onChanged: player.setVolume),
+          ),
+        ),
+        const SizedBox(width: 8),
+      ],
+    ),
+  );
+}
+
+/// The mini player sits outside the app's [Navigator], but sliders need an
+/// [Overlay] ancestor.
+class _OverlayHost extends StatefulWidget {
+  final Widget child;
+
+  const _OverlayHost({required this.child});
+
+  @override
+  State<_OverlayHost> createState() => _OverlayHostState();
+}
+
+class _OverlayHostState extends State<_OverlayHost> {
+  late final OverlayEntry _entry = OverlayEntry(builder: (context) => widget.child);
+
+  @override
+  void didUpdateWidget(_OverlayHost oldWidget) {
+    super.didUpdateWidget(oldWidget);
+    _entry.markNeedsBuild();
+  }
+
+  @override
+  Widget build(BuildContext context) => Overlay(initialEntries: [_entry]);
+}

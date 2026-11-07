@@ -41,6 +41,10 @@ import 'package:uuid/uuid.dart';
 
 final getIt = GetIt.instance;
 
+/// Windows at least this wide show the queue beside the collection.
+const wideLayoutMinWidth = 900.0;
+const queuePanelWidth = 380.0;
+
 final lightTheme = ThemeData(
   useMaterial3: false,
   brightness: Brightness.light,
@@ -268,38 +272,60 @@ class PolarisRouterDelegate extends RouterDelegate<PolarisPath>
           final collapseMiniPlayer = !isStartupComplete || sortedPages.lastOrNull?.child is PlayerPage;
 
           return SafeArea(
-            child: Column(
-              children: [
-                Expanded(
-                  child: Navigator(
-                    key: navigatorKey,
-                    onDidRemovePage: (page) {},
-                    pages: [
-                      if (!isStartupComplete) MaterialPage<dynamic>(child: StartupPage()),
-                      if (isStartupComplete) const MaterialPage<dynamic>(child: CollectionPage()),
-                      if (showSettings)
-                        MaterialPage<dynamic>(
-                            child: const SettingsPage(),
-                            onPopInvoked: (didPop, dynamic result) {
-                              if (didPop) {
-                                pagesModel.handleSettingsClosed();
-                              }
-                            }),
-                      if (showOfflineMusic)
-                        MaterialPage<dynamic>(
-                            child: const OfflineMusicPage(),
-                            onPopInvoked: (didPop, dynamic result) {
-                              if (didPop) {
-                                pagesModel.handleOfflineMusicClosed();
-                              }
-                            }),
-                      ...sortedPages,
-                    ],
+            child: LayoutBuilder(builder: (context, constraints) {
+              final wide = isStartupComplete && constraints.maxWidth >= wideLayoutMinWidth;
+              return Column(
+                children: [
+                  Expanded(
+                    child: Row(
+                      children: [
+                        Expanded(
+                          child: Navigator(
+                            key: navigatorKey,
+                            onDidRemovePage: (page) {},
+                            pages: [
+                              if (!isStartupComplete) MaterialPage<dynamic>(child: StartupPage()),
+                              if (isStartupComplete) const MaterialPage<dynamic>(child: CollectionPage()),
+                              if (showSettings)
+                                MaterialPage<dynamic>(
+                                    child: const SettingsPage(),
+                                    onPopInvoked: (didPop, dynamic result) {
+                                      if (didPop) {
+                                        pagesModel.handleSettingsClosed();
+                                      }
+                                    }),
+                              if (showOfflineMusic)
+                                MaterialPage<dynamic>(
+                                    child: const OfflineMusicPage(),
+                                    onPopInvoked: (didPop, dynamic result) {
+                                      if (didPop) {
+                                        pagesModel.handleOfflineMusicClosed();
+                                      }
+                                    }),
+                              ...sortedPages,
+                            ],
+                          ),
+                        ),
+                        if (wide) ...[
+                          const VerticalDivider(width: 1),
+                          // Own navigator: the queue's reorderable list and menus need an overlay.
+                          SizedBox(
+                            width: queuePanelWidth,
+                            child: HeroControllerScope.none(
+                              child: Navigator(
+                                onDidRemovePage: (page) {},
+                                pages: const [MaterialPage<dynamic>(child: QueuePage())],
+                              ),
+                            ),
+                          ),
+                        ],
+                      ],
+                    ),
                   ),
-                ),
-                MiniPlayer(collapse: collapseMiniPlayer),
-              ],
-            ),
+                  MiniPlayer(collapse: collapseMiniPlayer, wide: wide),
+                ],
+              );
+            }),
           );
         },
       ),
