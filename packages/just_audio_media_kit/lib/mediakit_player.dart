@@ -79,6 +79,9 @@ class MediaKitPlayer extends AudioPlayerPlatform {
         _updatePlaybackEvent();
       }),
       _player.stream.buffering.listen((isBuffering) {
+        // mpv reports buffering changes after the last source ended; only the
+        // completed stream may leave the completed state.
+        if (_processingState == ProcessingStateMessage.completed) return;
         _processingState = isBuffering
             ? ProcessingStateMessage.buffering
             : ProcessingStateMessage.ready;
