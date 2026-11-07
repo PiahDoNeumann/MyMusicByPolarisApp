@@ -1,3 +1,4 @@
+import 'dart:io';
 import 'dart:typed_data';
 import 'package:just_audio/just_audio.dart';
 import 'package:polaris/core/cache/collection.dart';
@@ -46,7 +47,8 @@ class AppClient implements AppClientInterface {
       return offlineClient.browse(host, path);
     }
 
-    if (useCache && collectionCache.hasPopulatedDirectory(host, path)) {
+    // The only way to refresh is pull-to-refresh, which a mouse cannot trigger.
+    if (useCache && !Platform.isWindows && collectionCache.hasPopulatedDirectory(host, path)) {
       final cachedContent = collectionCache.getDirectory(host, path);
       if (cachedContent != null) {
         return cachedContent;

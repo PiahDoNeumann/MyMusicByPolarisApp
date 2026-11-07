@@ -1,3 +1,5 @@
+import 'dart:io';
+
 import 'package:audio_service/audio_service.dart';
 import 'package:just_audio/just_audio.dart';
 import 'package:polaris/core/cache/collection.dart';
@@ -13,6 +15,14 @@ Future<PolarisAudioHandler> initAudioService({
   required CollectionCache collectionCache,
   required AppClient appClient,
 }) async {
+  // audio_service has no Windows implementation.
+  if (Platform.isWindows) {
+    return PolarisAudioHandler(
+      connectionManager: connectionManager,
+      collectionCache: collectionCache,
+      appClient: appClient,
+    );
+  }
   return await AudioService.init(
     builder: () => PolarisAudioHandler(
       connectionManager: connectionManager,

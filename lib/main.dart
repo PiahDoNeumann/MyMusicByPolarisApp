@@ -1,3 +1,5 @@
+import 'dart:io';
+
 import 'package:audio_session/audio_session.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter_displaymode/flutter_displaymode.dart';
@@ -5,6 +7,7 @@ import 'package:flutter_settings_screens/flutter_settings_screens.dart';
 import 'package:get_it/get_it.dart';
 import 'package:http/http.dart' as http;
 import 'package:just_audio/just_audio.dart';
+import 'package:just_audio_media_kit/just_audio_media_kit.dart';
 import 'package:polaris/core/audio_handler.dart';
 import 'package:polaris/core/authentication.dart' as authentication;
 import 'package:polaris/core/cache/collection.dart';
@@ -155,11 +158,18 @@ Future _registerSingletons() async {
 
 void main() async {
   WidgetsFlutterBinding.ensureInitialized();
+  if (Platform.isWindows) {
+    JustAudioMediaKit.ensureInitialized(windows: true);
+  }
   await Settings.init();
   await _registerSingletons();
-  FlutterDisplayMode.setHighRefreshRate();
-  final session = await AudioSession.instance;
-  await session.configure(const AudioSessionConfiguration.music());
+  if (Platform.isAndroid) {
+    FlutterDisplayMode.setHighRefreshRate();
+  }
+  if (!Platform.isWindows) {
+    final session = await AudioSession.instance;
+    await session.configure(const AudioSessionConfiguration.music());
+  }
   await getIt<AudioPlayer>().setAudioSource(getIt<Playlist>().audioSource);
   getIt<savestate.Manager>().init();
 

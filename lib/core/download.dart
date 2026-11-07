@@ -63,6 +63,12 @@ class Manager {
       return AudioSource.uri(cacheHit.uri, tag: mediaItem);
     }
 
+    // LockCachingAudioSource renames its .part file while mpv still holds it
+    // open, which Windows does not allow. Stream directly instead.
+    if (Platform.isWindows) {
+      return AudioSource.uri(apiClient.getAudioURI(path), tag: mediaItem);
+    }
+
     final _AudioJob? existingJob = _audioJobs[path];
     if (existingJob != null) {
       final MediaItem canonicalMediaItem = existingJob.audioSource.tag;
