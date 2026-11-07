@@ -41,7 +41,9 @@ dependencies:
   flutter_svg: ^1.1.0
   get_it: ^7.2.0
   just_audio: ^0.9.43
-  just_audio_media_kit: ^2.0.0
+  # Vendored with fixes for track duration and queue insertion.
+  just_audio_media_kit:
+    path: packages/just_audio_media_kit
   media_kit_libs_windows_audio: any
   http: ^0.13.1
   path: ^1.8.1
