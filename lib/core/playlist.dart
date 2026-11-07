@@ -31,8 +31,14 @@ class Playlist {
 
   Future queueLast(List<String> songs, {bool autoPlay = true}) async {
     final bool wasEmpty = _audioSource.sequence.isEmpty;
+    final bool wasCompleted = audioPlayer.processingState == ProcessingState.completed;
+    final int firstNewIndex = _audioSource.length;
     await _audioSource.addAll(await _makeAudioSources(songs));
     if (wasEmpty && autoPlay) {
+      audioPlayer.play();
+    } else if (wasCompleted && autoPlay) {
+      // Otherwise the player stays at the end of the songs it already finished.
+      await audioPlayer.seek(Duration.zero, index: firstNewIndex);
       audioPlayer.play();
     }
   }

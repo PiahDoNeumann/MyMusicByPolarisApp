@@ -85,4 +85,33 @@ void main() {
 
     expect(player.playlistUris.map((uri) => uri.split('/').last), ['one.wav', 'two.wav', 'three.wav']);
   }, skip: libmpv == null ? 'LIBMPV not set' : false);
+
+  test('plays a source added and seeked to after the queue completed', () async {
+    await player.load(LoadRequest(
+      audioSourceMessage: ConcatenatingAudioSourceMessage(
+        id: 'queue',
+        children: [_source(_silence(dir, 'first', 1))],
+        useLazyPreparation: true,
+        shuffleOrder: [0],
+      ),
+    ));
+    await player.play(PlayRequest());
+    await player.playbackEventMessageStream
+        .firstWhere((e) => e.processingState == ProcessingStateMessage.completed)
+        .timeout(const Duration(seconds: 10));
+
+    await player.concatenatingInsertAll(ConcatenatingInsertAllRequest(
+      id: 'queue',
+      index: 1,
+      children: [_source(_silence(dir, 'second', 3))],
+      shuffleOrder: [0, 1],
+    ));
+    await player.seek(SeekRequest(index: 1, position: Duration.zero));
+    await player.play(PlayRequest());
+
+    final playing = await player.playbackEventMessageStream
+        .firstWhere((e) => e.currentIndex == 1 && e.updatePosition > const Duration(milliseconds: 500))
+        .timeout(const Duration(seconds: 5));
+    expect(playing.duration?.inSeconds, 3);
+  }, skip: libmpv == null ? 'LIBMPV not set' : false);
 }
