@@ -2,6 +2,7 @@ library just_audio_media_kit;
 
 import 'dart:async';
 
+import 'package:flutter/foundation.dart';
 import 'package:just_audio_media_kit/just_audio_media_kit.dart';
 import 'package:just_audio_platform_interface/just_audio_platform_interface.dart';
 import 'package:logging/logging.dart';
@@ -34,6 +35,10 @@ class MediaKitPlayer extends AudioPlayerPlatform {
 
   /// [LoadRequest.initialPosition] or [seek] request before [Player.play] was called and/or finished loading.
   Duration? _setPosition;
+
+  @visibleForTesting
+  List<String> get playlistUris =>
+      _player.state.playlist.medias.map((m) => m.uri).toList();
 
   Media? get _currentMedia {
     var medias = _player.state.playlist.medias;
@@ -165,7 +170,12 @@ class MediaKitPlayer extends AudioPlayerPlatform {
       updateTime: DateTime.now(),
       updatePosition: _position,
       bufferedPosition: _bufferedPosition,
-      duration: duration,
+      // just_audio treats a null duration as unknown, so keep reporting the
+      // current one on events that are not about the duration.
+      duration: duration ??
+          (_player.state.duration > Duration.zero
+              ? _player.state.duration
+              : null),
       icyMetadata: icyMetadata,
       currentIndex: _currentIndex,
       androidAudioSessionId: null,
@@ -276,16 +286,16 @@ class MediaKitPlayer extends AudioPlayerPlatform {
   Future<ConcatenatingInsertAllResponse> concatenatingInsertAll(
       ConcatenatingInsertAllRequest request) async {
     // _logger.fine('concatenatingInsertAll(${request.toMap()})');
+    var index = request.index;
     for (final source in request.children) {
       await _player.add(_convertAudioSourceIntoMediaKit(source));
 
-      final length = _player.state.playlist.medias.length;
-
-      if (length == 0 || length == 1) continue;
-
-      if (request.index < (length - 1) && request.index >= 0) {
-        await _player.move(length, request.index);
+      // The new source is appended last; move it to its requested position.
+      final last = _player.state.playlist.medias.length - 1;
+      if (index >= 0 && index < last) {
+        await _player.move(last, index);
       }
+      index++;
     }
 
     return ConcatenatingInsertAllResponse();
