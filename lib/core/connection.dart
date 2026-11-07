@@ -175,7 +175,9 @@ class Manager extends ChangeNotifier implements ManagerInterface {
   String _cleanURL(String url) {
     url = url.trim();
     if (!url.startsWith('http')) {
-      url = 'http://$url';
+      // Servers behind a reverse proxy redirect http to https, and a redirected
+      // login (POST) fails; local servers can still be reached with http:// typed explicitly.
+      url = 'https://$url';
     }
     while (url.endsWith('/')) {
       url = url.substring(0, url.length - 1);
