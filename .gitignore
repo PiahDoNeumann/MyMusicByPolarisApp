@@ -46,3 +46,7 @@ app.*.symbols
 
 # Obfuscation related
 app.*.map.json
+
+# Vendored package build output
+/packages/*/build/
+/packages/*/pubspec.lock
