@@ -15,21 +15,15 @@ Future<PolarisAudioHandler> initAudioService({
   required CollectionCache collectionCache,
   required AppClient appClient,
 }) async {
-  // audio_service has no Windows implementation.
-  if (Platform.isWindows) {
-    return PolarisAudioHandler(
-      connectionManager: connectionManager,
-      collectionCache: collectionCache,
-      appClient: appClient,
-    );
-  }
   return await AudioService.init(
     builder: () => PolarisAudioHandler(
       connectionManager: connectionManager,
       collectionCache: collectionCache,
       appClient: appClient,
     ),
-    config: const AudioServiceConfig(
+    config: AudioServiceConfig(
+      // audio_service_win registers the media controls under this id; Android keeps its default channel.
+      androidNotificationChannelId: Platform.isWindows ? 'agersant.polaris.channel.audio' : null,
       androidNotificationIcon: "drawable/notification_icon",
       androidNotificationChannelName: 'Polaris Audio Playback',
       androidNotificationOngoing: true,
