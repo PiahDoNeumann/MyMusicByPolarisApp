@@ -1,5 +1,3 @@
-import 'dart:math';
-
 import 'package:flutter/material.dart';
 
 // Trimmed down version of https://github.com/ryanheise/just_audio/blob/master/just_audio/example/lib/common.dart
@@ -33,7 +31,7 @@ class _SeekBarState extends State<SeekBar> {
             child: Slider(
               min: 0.0,
               max: widget.duration.inMilliseconds.toDouble(),
-              value: min(widget.position.inMilliseconds.toDouble(), widget.duration.inMilliseconds.toDouble()),
+              value: widget.position.inMilliseconds.toDouble().clamp(0.0, widget.duration.inMilliseconds.toDouble()),
               onChanged: (value) {
                 setState(() {
                   _dragValue = value;
@@ -53,8 +51,8 @@ class _SeekBarState extends State<SeekBar> {
           child: Slider(
             min: 0.0,
             max: widget.duration.inMilliseconds.toDouble(),
-            value:
-                min(_dragValue ?? widget.position.inMilliseconds.toDouble(), widget.duration.inMilliseconds.toDouble()),
+            value: (_dragValue ?? widget.position.inMilliseconds.toDouble())
+                .clamp(0.0, widget.duration.inMilliseconds.toDouble()),
             onChanged: (value) {
               setState(() {
                 _dragValue = value;
