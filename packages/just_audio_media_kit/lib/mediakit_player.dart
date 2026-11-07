@@ -75,6 +75,8 @@ class MediaKitPlayer extends AudioPlayerPlatform {
         _updatePlaybackEvent(duration: duration);
       }),
       _player.stream.position.listen((position) {
+        // The last position mpv reports falls short of the end of the track.
+        if (_processingState == ProcessingStateMessage.completed) return;
         _position = position;
         _updatePlaybackEvent();
       }),
@@ -105,6 +107,7 @@ class MediaKitPlayer extends AudioPlayerPlatform {
             // is not looping (technically this shouldn't be fired if the player is looping)
             _player.state.playlistMode == PlaylistMode.none) {
           _processingState = ProcessingStateMessage.completed;
+          _bufferedPosition = _position = _player.state.duration;
         } else {
           _processingState = ProcessingStateMessage.ready;
         }

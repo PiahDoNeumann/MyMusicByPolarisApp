@@ -98,6 +98,7 @@ void main() {
     await subscription.cancel();
 
     expect(events.last.processingState, ProcessingStateMessage.completed);
+    expect(events.last.updatePosition, events.last.duration, reason: 'a completed track sits at its end');
   }, skip: libmpv == null ? 'LIBMPV not set' : false);
 
   test('plays a source added and seeked to after the queue completed', () async {
