@@ -27,8 +27,9 @@ dependencies:
 
   animations: ^2.0.0
   audio_service: ^0.18.18
-  # Windows System Media Transport Controls (media keys) for audio_service.
-  audio_service_win: ^0.0.3
+  # Windows System Media Transport Controls (media keys) for audio_service. Vendored with a C++20 fix.
+  audio_service_win:
+    path: packages/audio_service_win
   audio_session: ^0.1.7
   async: ^2.8.2
   characters: ^1.2.0
